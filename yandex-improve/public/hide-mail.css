@@ -1,0 +1,9 @@
+[data-testid="aside_promo_carousel_banner"],
+.promozavr-anchor-carousel-banner,
+[data-name="banner-layout"],
+[data-container-type="smart-tile-container"],
+div[style*="--rc-adaptive-width"],
+#js-neuroexpert-button,
+[class*="NeuroexpertButton-m__withPromo"] {
+  display: none !important;
+}

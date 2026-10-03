@@ -1,0 +1,13 @@
+[class*="AppMoney_"],
+[class*="AppMoneySidebar_"],
+[class*="AppForecastMoney_"],
+[class*="MainPage_moneyContainer"],
+[class*="MainPage_topBlockWithMoney"],
+[class*="Money_ecomFooter"],
+[id^="money-"],
+[id^="adv_R-I-"],
+#forecast_third_adv,
+#footer_ecom_adv,
+[data-name="adWrapper"] {
+  display: none !important;
+}

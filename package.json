@@ -1,0 +1,12 @@
+{
+  "name": "browser-extensions",
+  "private": true,
+  "workspaces": [
+    "youtube-improve",
+    "yandex-improve"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}

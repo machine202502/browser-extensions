@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Yandex Improve",
+  "version": "1.1.0",
+  "description": "Блокирует рекламу Яндекс Почты и Яндекс Погоды",
+  "permissions": ["declarativeNetRequest"],
+  "host_permissions": [
+    "https://mail.yandex.ru/*",
+    "https://yandex.ru/*",
+    "https://ya.ru/*",
+    "https://yastatic.net/*",
+    "https://static-mon.yandex.net/*",
+    "https://ads.adfox.ru/*",
+    "https://runtime.strm.yandex.ru/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "block_yandex_ads",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.yandex.ru/*",
+        "https://yandex.ru/pogoda/*",
+        "https://yandex.ru/weather/*",
+        "https://ya.ru/pogoda/*",
+        "https://runtime.strm.yandex.ru/*"
+      ],
+      "js": ["inject.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://mail.yandex.ru/*"],
+      "js": ["hide-mail.js"],
+      "css": ["hide-mail.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://yandex.ru/pogoda/*",
+        "https://yandex.ru/weather/*",
+        "https://ya.ru/pogoda/*"
+      ],
+      "js": ["hide-weather.js"],
+      "css": ["hide-weather.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

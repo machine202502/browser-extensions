@@ -1,0 +1,73 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||mail.yandex.ru/u2709",
+      "resourceTypes": ["xmlhttprequest", "script", "image", "other", "media"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||yastatic.net/naydex/yandex-mail",
+      "resourceTypes": ["image", "script", "font", "other", "media"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||yandex.ru/ads/",
+      "resourceTypes": [
+        "script",
+        "xmlhttprequest",
+        "image",
+        "media",
+        "other",
+        "sub_frame"
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||static-mon.yandex.net",
+      "initiatorDomains": ["mail.yandex.ru", "yandex.ru", "ya.ru"],
+      "resourceTypes": ["script", "xmlhttprequest", "image", "other"]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||yastatic.net/pcode/adfox/",
+      "resourceTypes": ["script", "xmlhttprequest", "image", "other"]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||ads.adfox.ru",
+      "resourceTypes": ["script", "xmlhttprequest", "image", "media", "other", "sub_frame"]
+    }
+  },
+  {
+    "id": 7,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "||yastatic.net/safeframe-bundles/",
+      "resourceTypes": ["script", "sub_frame", "other"]
+    }
+  }
+]
