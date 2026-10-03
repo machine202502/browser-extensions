@@ -4,3 +4,9 @@ Thumbs.db
 *.crx
 node_modules/
 dist/
+__pycache__/
+*.pyc
+tray-error.txt
+youtube-downloader/native/host.cmd
+youtube-downloader/native/host.sh
+youtube-downloader/native/host-manifest.json

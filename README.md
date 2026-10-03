@@ -6,6 +6,7 @@
 | --- | --- | --- |
 | [`yandex-improve/`](./yandex-improve) | Реклама в Яндекс Почте и Погоде | `yandex-improve/dist` |
 | [`youtube-improve/`](./youtube-improve) | Shorts, блюр, блокировка, просмотры | `youtube-improve/dist` |
+| [`youtube-downloader/`](./youtube-downloader) | Скачивание ролика в файл | `youtube-downloader/dist` |
 
 ## Сборка
 

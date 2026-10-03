@@ -1,0 +1,23 @@
+{
+  "name": "youtube-downloader",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit && node ../scripts/build-extension.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "extensionBuild": {
+    "entries": [
+      "src/content.ts",
+      "src/background.ts",
+      "src/popup.ts"
+    ],
+    "copy": [
+      "public"
+    ]
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,188 @@
+#ytdl-slot {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin: 0 8px 0 0;
+  z-index: 20;
+}
+
+#ytdl-slot[hidden] {
+  display: none !important;
+}
+
+#ytdl-slot.ytdl-floating {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483646;
+  margin: 0;
+}
+
+#ytdl-btn {
+  box-sizing: border-box;
+  height: 36px;
+  border: 0;
+  border-radius: 18px;
+  padding: 0 16px;
+  font: 500 14px/36px Roboto, Arial, sans-serif;
+  cursor: pointer;
+  background: #c00;
+  color: #fff;
+}
+
+#ytdl-btn:hover {
+  background: #e00;
+}
+
+#ytdl-panel {
+  position: fixed;
+  z-index: 2147483646;
+  width: 440px;
+  max-height: min(70vh, 520px);
+  overflow: auto;
+  padding: 12px 12px 8px;
+  border-radius: 12px;
+  background: #fff;
+  color: #0f0f0f;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  font: 14px/20px Roboto, Arial, sans-serif;
+}
+
+#ytdl-panel[hidden],
+#ytdl-toast[hidden] {
+  display: none !important;
+}
+
+html[dark] #ytdl-panel {
+  background: #212121;
+  color: #f1f1f1;
+}
+
+.ytdl-head {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.ytdl-note,
+.ytdl-section,
+.ytdl-grid-head,
+.ytdl-row-meta {
+  color: #606060;
+}
+
+html[dark] .ytdl-note,
+html[dark] .ytdl-section,
+html[dark] .ytdl-grid-head,
+html[dark] .ytdl-row-meta {
+  color: #aaa;
+}
+
+.ytdl-note {
+  font-size: 12px;
+  line-height: 1.35;
+  margin-bottom: 8px;
+}
+
+.ytdl-status {
+  min-height: 18px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #2e7d32;
+  margin-bottom: 6px;
+}
+
+.ytdl-status.ytdl-error,
+#ytdl-toast.ytdl-error {
+  color: #fff;
+}
+
+.ytdl-status.ytdl-error {
+  color: #c62828;
+}
+
+.ytdl-section {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ytdl-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr 0.8fr;
+  align-items: center;
+  column-gap: 8px;
+}
+
+.ytdl-grid-head {
+  padding: 0 10px 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ytdl-row {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 4px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #f6f6f6;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ytdl-row.ytdl-grid {
+  display: grid;
+}
+
+.ytdl-row:hover {
+  background: #ececec;
+}
+
+html[dark] .ytdl-row {
+  background: #303030;
+}
+
+html[dark] .ytdl-row:hover {
+  background: #3a3a3a;
+}
+
+.ytdl-row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ytdl-row-title {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ytdl-row-meta {
+  font-size: 12px;
+  text-align: right;
+}
+
+#ytdl-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  max-width: min(480px, calc(100vw - 32px));
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #0f0f0f;
+  color: #fff;
+  font: 14px/20px Roboto, Arial, sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+#ytdl-toast.ytdl-error {
+  background: #c62828;
+}

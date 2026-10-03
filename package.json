@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "youtube-improve",
+    "youtube-downloader",
     "yandex-improve"
   ],
   "scripts": {
