@@ -5,6 +5,7 @@ import {
   findOverlayHost,
   getBlockReason,
   getCardIds,
+  isShortsCard,
   queryCardsDeepOuter,
   layoutOnThumb,
   showConfirm,
@@ -44,6 +45,7 @@ let onChange: ChangeCb = () => undefined;
 let isEnabled: () => boolean = () => false;
 let isFeedPage: () => boolean = () => false;
 let getAutoHideAfter: () => number = () => DEFAULT_AUTO_HIDE_AFTER;
+let isAutoHideEnabled: () => boolean = () => true;
 let pendingBadgesTimer = 0;
 const pendingBadgeCards = new Set<HTMLElement>();
 const cardObserver = new IntersectionObserver(
@@ -61,11 +63,13 @@ export function initViews(opts: {
   feedPage: () => boolean;
   onUpdate: ChangeCb;
   autoHideAfter: () => number;
+  autoHideEnabled: () => boolean;
 }): void {
   isEnabled = opts.enabled;
   isFeedPage = opts.feedPage;
   onChange = opts.onUpdate;
   getAutoHideAfter = opts.autoHideAfter;
+  isAutoHideEnabled = opts.autoHideEnabled;
   document.getElementById("yti-badges-root")?.remove();
   loadViews();
   try {
@@ -136,7 +140,7 @@ export function isAvailableVideo(videoId: string | null): boolean {
 }
 
 export function isHiddenVideo(videoId: string | null): boolean {
-  if (!videoId || !isEnabled() || !isFeedPage()) return false;
+  if (!videoId || !isEnabled() || !isFeedPage() || !isAutoHideEnabled()) return false;
   if (available.has(videoId)) return false;
   return getEntry(videoId).count > getAutoHideAfter();
 }
@@ -551,6 +555,16 @@ function applyCardBadges(
   clearCountBadge(layer, card);
 }
 
+function clearShowOverlay(card: HTMLElement): void {
+  for (const root of [findBadgesMount(card), findViewsHost(card)]) {
+    if (!root) continue;
+    const ui = root.querySelector(":scope > .yti-views-ui");
+    ui?.remove();
+    root.classList.remove("yti-has-views-ui");
+    delete root.dataset.ytiViewsUiBound;
+  }
+}
+
 function clearViewsUi(card: HTMLElement): void {
   const host = findViewsHost(card);
   const mount = findBadgesMount(card);
@@ -570,10 +584,18 @@ function clearViewsUi(card: HTMLElement): void {
   clearViewsBadges(card, getCardIds(card).videoId);
 }
 
+function syncAvailableClear(card: HTMLElement, videoId: string | null): void {
+  const showAvailableClear =
+    isAvailableVideo(videoId) &&
+    document.documentElement.classList.contains("yti-public-available");
+  card.classList.toggle("yti-available-card", showAvailableClear);
+}
+
 function syncViewsCard(card: Element): void {
-  if (!(card instanceof HTMLElement)) return;
+  if (!(card instanceof HTMLElement) || isShortsCard(card)) return;
 
   const { videoId, channelIds } = getCardIds(card);
+  syncAvailableClear(card, videoId);
   observeCard(card);
 
   if (!isEnabled() || !isFeedPage() || !videoId) {
@@ -636,6 +658,7 @@ function syncViewsCard(card: Element): void {
   syncCardNavGuard(card, false);
   syncMountClickBlock(card, false);
   syncHostShield(findViewsHost(card), false);
+  clearShowOverlay(card);
   applyCardBadges(card, videoId, entry, false);
 
   const ui = viewsOnlyUi(card);
@@ -648,10 +671,18 @@ function resyncAllCards(): void {
 }
 
 export function syncViewsUi(): void {
-  if (!loaded || !isEnabled()) return;
+  if (!loaded) return;
+  if (!isEnabled()) {
+    for (const card of queryCardsDeepOuter()) {
+      if (!(card instanceof HTMLElement)) continue;
+      syncAvailableClear(card, getCardIds(card).videoId);
+    }
+    return;
+  }
   if (!isFeedPage()) {
     for (const card of queryCardsDeepOuter()) {
       if (!(card instanceof HTMLElement)) continue;
+      syncAvailableClear(card, getCardIds(card).videoId);
       card.classList.remove("yti-hidden");
       clearViewsUi(card);
     }

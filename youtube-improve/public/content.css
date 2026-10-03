@@ -1,37 +1,67 @@
-/* ── Shorts ── */
-ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
-ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has([aria-label*="Shorts"])),
-ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model)),
-ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model-v2)),
-ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(a[href*="/shorts/"])),
-ytd-rich-section-renderer:has(ytd-reel-shelf-renderer),
-ytd-rich-shelf-renderer[is-shorts],
-ytd-rich-shelf-renderer:has([aria-label*="Shorts"]),
-ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model),
-ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model-v2),
-ytd-rich-shelf-renderer:has(a[href*="/shorts/"]),
-ytd-reel-shelf-renderer,
-ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model),
-ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model-v2),
-ytd-item-section-renderer:has(ytd-reel-shelf-renderer),
-ytd-item-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
-ytd-item-section-renderer:has(ytm-shorts-lockup-view-model),
-ytd-item-section-renderer:has(ytm-shorts-lockup-view-model-v2),
-grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
-grid-shelf-view-model:has(ytm-shorts-lockup-view-model-v2),
-grid-shelf-view-model:has(a[href*="/shorts/"]) {
+/* ── Shorts (скрыты, пока не включён показ) ── */
+html:not(.yti-show-shorts) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html:not(.yti-show-shorts) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has([aria-label*="Shorts"])),
+html:not(.yti-show-shorts) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model)),
+html:not(.yti-show-shorts) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model-v2)),
+html:not(.yti-show-shorts) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(a[href*="/shorts/"])),
+html:not(.yti-show-shorts) ytd-rich-section-renderer:has(ytd-reel-shelf-renderer),
+html:not(.yti-show-shorts) ytd-rich-shelf-renderer[is-shorts],
+html:not(.yti-show-shorts) ytd-rich-shelf-renderer:has([aria-label*="Shorts"]),
+html:not(.yti-show-shorts) ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model),
+html:not(.yti-show-shorts) ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model-v2),
+html:not(.yti-show-shorts) ytd-rich-shelf-renderer:has(a[href*="/shorts/"]),
+html:not(.yti-show-shorts) ytd-reel-shelf-renderer,
+html:not(.yti-show-shorts) ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model),
+html:not(.yti-show-shorts) ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model-v2),
+html:not(.yti-show-shorts) ytd-item-section-renderer:has(ytd-reel-shelf-renderer),
+html:not(.yti-show-shorts) ytd-item-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+html:not(.yti-show-shorts) ytd-item-section-renderer:has(ytm-shorts-lockup-view-model),
+html:not(.yti-show-shorts) ytd-item-section-renderer:has(ytm-shorts-lockup-view-model-v2),
+html:not(.yti-show-shorts) grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+html:not(.yti-show-shorts) grid-shelf-view-model:has(ytm-shorts-lockup-view-model-v2),
+html:not(.yti-show-shorts) grid-shelf-view-model:has(a[href*="/shorts/"]),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has([aria-label*="Shorts"])),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model)),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model-v2)),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-section-renderer:has(ytd-rich-shelf-renderer:has(a[href*="/shorts/"])),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-section-renderer:has(ytd-reel-shelf-renderer),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-shelf-renderer[is-shorts],
+:host-context(html:not(.yti-show-shorts)) ytd-rich-shelf-renderer:has([aria-label*="Shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-shelf-renderer:has(ytm-shorts-lockup-view-model-v2),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-shelf-renderer:has(a[href*="/shorts/"]),
+:host-context(html:not(.yti-show-shorts)) ytd-reel-shelf-renderer,
+:host-context(html:not(.yti-show-shorts)) ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model),
+:host-context(html:not(.yti-show-shorts)) ytd-rich-item-renderer:has(ytm-shorts-lockup-view-model-v2),
+:host-context(html:not(.yti-show-shorts)) ytd-item-section-renderer:has(ytd-reel-shelf-renderer),
+:host-context(html:not(.yti-show-shorts)) ytd-item-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+:host-context(html:not(.yti-show-shorts)) ytd-item-section-renderer:has(ytm-shorts-lockup-view-model),
+:host-context(html:not(.yti-show-shorts)) ytd-item-section-renderer:has(ytm-shorts-lockup-view-model-v2),
+:host-context(html:not(.yti-show-shorts)) grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+:host-context(html:not(.yti-show-shorts)) grid-shelf-view-model:has(ytm-shorts-lockup-view-model-v2),
+:host-context(html:not(.yti-show-shorts)) grid-shelf-view-model:has(a[href*="/shorts/"]) {
   display: none !important;
 }
 
-ytd-mini-guide-entry-renderer:has(a[href*="/shorts"]),
-ytd-mini-guide-entry-renderer:has([title="Shorts"]),
-ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
-ytd-guide-entry-renderer:has(a[href*="/shorts"]),
-ytd-guide-entry-renderer:has([title="Shorts"]),
-ytd-guide-entry-renderer:has([aria-label="Shorts"]),
-ytd-guide-collapsible-entry-renderer:has(a[href*="/shorts"]),
-ytd-guide-collapsible-entry-renderer:has([title="Shorts"]),
-ytd-guide-collapsible-entry-renderer:has([aria-label="Shorts"]) {
+html:not(.yti-show-shorts) ytd-mini-guide-entry-renderer:has(a[href*="/shorts"]),
+html:not(.yti-show-shorts) ytd-mini-guide-entry-renderer:has([title="Shorts"]),
+html:not(.yti-show-shorts) ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
+html:not(.yti-show-shorts) ytd-guide-entry-renderer:has(a[href*="/shorts"]),
+html:not(.yti-show-shorts) ytd-guide-entry-renderer:has([title="Shorts"]),
+html:not(.yti-show-shorts) ytd-guide-entry-renderer:has([aria-label="Shorts"]),
+html:not(.yti-show-shorts) ytd-guide-collapsible-entry-renderer:has(a[href*="/shorts"]),
+html:not(.yti-show-shorts) ytd-guide-collapsible-entry-renderer:has([title="Shorts"]),
+html:not(.yti-show-shorts) ytd-guide-collapsible-entry-renderer:has([aria-label="Shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-mini-guide-entry-renderer:has(a[href*="/shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-mini-guide-entry-renderer:has([title="Shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-mini-guide-entry-renderer:has([aria-label="Shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-guide-entry-renderer:has(a[href*="/shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-guide-entry-renderer:has([title="Shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-guide-entry-renderer:has([aria-label="Shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-guide-collapsible-entry-renderer:has(a[href*="/shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-guide-collapsible-entry-renderer:has([title="Shorts"]),
+:host-context(html:not(.yti-show-shorts)) ytd-guide-collapsible-entry-renderer:has([aria-label="Shorts"]) {
   display: none !important;
 }
 
@@ -47,7 +77,7 @@ ytd-single-hero-image-renderer yt-img-shadow {
   border-radius: 12px;
 }
 
-a.ytLockupViewModelContentImage {
+a.ytLockupViewModelContentImage:not([href*="/shorts/"]) {
   overflow: hidden;
   border-radius: 12px;
 }
@@ -593,10 +623,26 @@ html:not(.yti-no-block) .yti-actions-open.yti-blocked-host > .yti-block-ui {
   opacity: 1 !important;
 }
 
-html:not(.yti-no-views) .yti-actions-open.yti-hidden .yti-block-ui,
-html:not(.yti-no-views) .yti-actions-open.yti-hidden .yti-views-ui,
-html:not(.yti-no-views) .yti-actions-open .yti-hidden .yti-views-ui {
+.yti-hidden .yti-block-ui,
+:host-context(.yti-hidden) .yti-block-ui {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html:not(.yti-no-views) .yti-hidden:hover .yti-views-ui,
+html:not(.yti-no-views) .yti-hidden:focus-within .yti-views-ui,
+:host-context(.yti-hidden:hover) .yti-views-ui,
+:host-context(.yti-hidden:focus-within) .yti-views-ui {
   opacity: 1 !important;
+}
+
+html.yti-lock-preview #video-preview,
+html.yti-lock-preview ytd-video-preview,
+html.yti-lock-preview ytd-video-preview-loader,
+:host-context(html.yti-lock-preview) ytd-video-preview,
+:host-context(html.yti-lock-preview) ytd-video-preview-loader {
+  display: none !important;
+  pointer-events: none !important;
 }
 
 .yti-views-ui {
@@ -636,26 +682,60 @@ html.yti-no-views .yti-views-ui {
 yt-thumbnail-view-model.yti-hidden-thumb,
 ytd-thumbnail.yti-hidden-thumb,
 yt-img-shadow.yti-hidden-thumb,
+yt-thumbnail-view-model.yti-hidden-thumb:hover,
+yt-thumbnail-view-model.yti-hidden-thumb:focus-within,
+ytd-thumbnail.yti-hidden-thumb:hover,
+ytd-thumbnail.yti-hidden-thumb:focus-within,
+yt-img-shadow.yti-hidden-thumb:hover,
+yt-img-shadow.yti-hidden-thumb:focus-within,
 .yti-hidden:hover yt-thumbnail-view-model.yti-hidden-thumb,
+.yti-hidden:focus-within yt-thumbnail-view-model.yti-hidden-thumb,
 .yti-hidden.yti-hover yt-thumbnail-view-model.yti-hidden-thumb,
 .yti-hover yt-thumbnail-view-model.yti-hidden-thumb,
 ytd-rich-item-renderer:hover yt-thumbnail-view-model.yti-hidden-thumb,
+ytd-rich-item-renderer:focus-within yt-thumbnail-view-model.yti-hidden-thumb,
+ytd-rich-item-renderer:hover ytd-thumbnail.yti-hidden-thumb,
+ytd-rich-item-renderer:focus-within ytd-thumbnail.yti-hidden-thumb,
+yt-lockup-view-model:hover yt-thumbnail-view-model.yti-hidden-thumb,
+yt-lockup-view-model:focus-within yt-thumbnail-view-model.yti-hidden-thumb,
+yt-lockup-view-model:hover ytd-thumbnail.yti-hidden-thumb,
+yt-lockup-view-model:focus-within ytd-thumbnail.yti-hidden-thumb,
 ytd-video-renderer:hover yt-thumbnail-view-model.yti-hidden-thumb,
+ytd-video-renderer:focus-within yt-thumbnail-view-model.yti-hidden-thumb,
+ytd-compact-video-renderer:hover yt-thumbnail-view-model.yti-hidden-thumb,
+ytd-compact-video-renderer:focus-within yt-thumbnail-view-model.yti-hidden-thumb,
 a.ytLockupViewModelContentImage:hover yt-thumbnail-view-model.yti-hidden-thumb,
+a.ytLockupViewModelContentImage:focus-within yt-thumbnail-view-model.yti-hidden-thumb,
+a.ytLockupViewModelContentImage:hover ytd-thumbnail.yti-hidden-thumb,
+a.ytLockupViewModelContentImage:focus-within ytd-thumbnail.yti-hidden-thumb,
 :host(.yti-hidden) yt-thumbnail-view-model,
 :host(.yti-hidden:hover) yt-thumbnail-view-model,
+:host(.yti-hidden:focus-within) yt-thumbnail-view-model,
 :host-context(.yti-hidden) yt-thumbnail-view-model,
 :host-context(.yti-hidden:hover) yt-thumbnail-view-model,
+:host-context(.yti-hidden:focus-within) yt-thumbnail-view-model,
 :host(:hover) yt-thumbnail-view-model.yti-hidden-thumb,
+:host(:focus-within) yt-thumbnail-view-model.yti-hidden-thumb,
 :host(.yti-hover) yt-thumbnail-view-model.yti-hidden-thumb {
   filter: blur(18px) !important;
 }
 
 .yti-hidden-meta,
 .yti-hidden:hover .yti-hidden-meta,
+.yti-hidden:focus-within .yti-hidden-meta,
 .yti-hidden.yti-hover .yti-hidden-meta,
 .yti-hover .yti-hidden-meta {
   filter: blur(8px) !important;
+}
+
+/* Доступное видео без блюра превью, когда включена «Публичность доступного». */
+.yti-available-card:not(.yti-hidden):not(.yti-blocked) yt-thumbnail-view-model:not(.yti-hidden-thumb):not(.yti-blocked-thumb),
+.yti-available-card:not(.yti-hidden):not(.yti-blocked) ytd-thumbnail:not(.yti-hidden-thumb):not(.yti-blocked-thumb),
+.yti-available-card:not(.yti-hidden):not(.yti-blocked) yt-img-shadow:not(.yti-hidden-thumb):not(.yti-blocked-thumb),
+:host-context(.yti-available-card:not(.yti-hidden):not(.yti-blocked)) yt-thumbnail-view-model:not(.yti-hidden-thumb):not(.yti-blocked-thumb),
+:host-context(.yti-available-card:not(.yti-hidden):not(.yti-blocked)) ytd-thumbnail:not(.yti-hidden-thumb):not(.yti-blocked-thumb),
+:host-context(.yti-available-card:not(.yti-hidden):not(.yti-blocked)) yt-img-shadow:not(.yti-hidden-thumb):not(.yti-blocked-thumb) {
+  filter: none !important;
 }
 
 /* UI lives in #yti-host shadow root (content.js) */

@@ -98,7 +98,20 @@ import { installDontRecommend, maybeIngestResponse } from "./dont-recommend";
     return value;
   }
 
+  function shortsHidingEnabled(): boolean {
+    try {
+      return localStorage.getItem("yti-hide-shorts") !== "0";
+    } catch {
+      return true;
+    }
+  }
+
+  function withoutShorts(value: unknown): unknown {
+    return shortsHidingEnabled() ? stripShortsDeep(value) : value;
+  }
+
   function filterShortsResponseText(text: string, url: string): string {
+    if (!shortsHidingEnabled()) return text;
     if (!url.includes("/youtubei/v1/search") && !url.includes("/youtubei/v1/browse")) {
       return text;
     }
@@ -225,12 +238,12 @@ import { installDontRecommend, maybeIngestResponse } from "./dont-recommend";
         return initial;
       },
       set(v: unknown): void {
-        initial = stripShortsDeep(v);
+        initial = withoutShorts(v);
         maybeIngestResponse("ytInitialData", JSON.stringify(initial));
       },
     });
     if (initial !== undefined) {
-      initial = stripShortsDeep(initial);
+      initial = withoutShorts(initial);
       maybeIngestResponse("ytInitialData", JSON.stringify(initial));
     }
 
@@ -249,7 +262,7 @@ import { installDontRecommend, maybeIngestResponse } from "./dont-recommend";
         loadFn = function (this: unknown, data: unknown): void {
           if (data && typeof data === "object") {
             const d = data as Record<string, unknown>;
-            if (d.response !== undefined) d.response = stripShortsDeep(d.response);
+            if (d.response !== undefined) d.response = withoutShorts(d.response);
           }
           return fn.call(this, data);
         };

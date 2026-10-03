@@ -13,6 +13,8 @@ const EMPTY: BlockData = { videos: [], channels: [] };
 const BLOCK_CARD_SEL =
   "ytd-rich-item-renderer,yt-lockup-view-model,ytd-video-renderer,ytd-compact-video-renderer," +
   "ytd-grid-video-renderer,ytd-watch-card-compact-video-renderer,ytd-universal-watch-card-renderer";
+const SHORTS_CARD_SEL =
+  "ytm-shorts-lockup-view-model,ytm-shorts-lockup-view-model-v2,ytd-reel-item-renderer";
 const ANCHOR_HOST_SEL = "a.ytLockupViewModelContentImage,a#thumbnail";
 const THUMB_MOUNT_SEL = ".ytLockupViewModelHost,#dismissible,.yti-block-wrap";
 const THUMB_TARGET_SEL = "yt-thumbnail-view-model,ytd-thumbnail,yt-img-shadow";
@@ -658,8 +660,19 @@ function makeBtn(label: string, bg: string, fg: string, onClick: (e: MouseEvent)
   return b;
 }
 
+/** Полка Shorts — те же теги, что у обычного видео, но кадр вертикальный. */
+export function isShortsCard(card: Element): boolean {
+  if (card.matches(SHORTS_CARD_SEL)) return true;
+  if (card.closest("[is-shorts], ytd-reel-shelf-renderer, ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2")) {
+    return true;
+  }
+  const hit = "ytm-shorts-lockup-view-model, ytm-shorts-lockup-view-model-v2, a[href*='/shorts/']";
+  if (card.querySelector(hit)) return true;
+  return card.shadowRoot?.querySelector(hit) != null;
+}
+
 function syncCard(card: Element): void {
-  if (!(card instanceof HTMLElement)) return;
+  if (!(card instanceof HTMLElement) || isShortsCard(card)) return;
 
   const { videoId, channelIds } = getCardIds(card);
   const reason = getBlockReason(videoId, channelIds);
@@ -733,6 +746,9 @@ function syncCard(card: Element): void {
   if (!host) return;
 
   if (videoId && checkHidden(videoId)) {
+    host.querySelector(":scope > .yti-block-ui")?.remove();
+    host.classList.remove("yti-has-block-ui");
+    delete host.dataset.ytiBlockUiBound;
     syncHostShield(host, false);
     return;
   }

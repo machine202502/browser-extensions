@@ -14,6 +14,9 @@ interface Settings {
   blockEnabled: boolean;
   viewsEnabled: boolean;
   dontRecommendEnabled: boolean;
+  publicAvailable: boolean;
+  hideShorts: boolean;
+  autoHideEnabled: boolean;
   autoHideAfter: number;
 }
 
@@ -25,6 +28,9 @@ const POPUP_DEFAULTS: Settings = {
   blockEnabled: true,
   viewsEnabled: true,
   dontRecommendEnabled: true,
+  publicAvailable: false,
+  hideShorts: true,
+  autoHideEnabled: true,
   autoHideAfter: 5,
 };
 const BOOL_KEYS: (keyof Omit<Settings, "autoHideAfter">)[] = [
@@ -34,6 +40,9 @@ const BOOL_KEYS: (keyof Omit<Settings, "autoHideAfter">)[] = [
   "blurLinks",
   "blockEnabled",
   "viewsEnabled",
+  "publicAvailable",
+  "hideShorts",
+  "autoHideEnabled",
   "dontRecommendEnabled",
 ];
 
@@ -55,6 +64,13 @@ function getImportMode(): ImportMode {
   return "replace";
 }
 
+function syncAutoHideField(enabled: boolean): void {
+  const input = document.getElementById("autoHideAfter");
+  const row = document.getElementById("autoHideAfterRow");
+  if (input instanceof HTMLInputElement) input.disabled = !enabled;
+  if (row instanceof HTMLElement) row.style.opacity = enabled ? "1" : "0.45";
+}
+
 function load(): void {
   chrome.storage.local.get(POPUP_DEFAULTS, (s: Partial<Settings>) => {
     for (const key of BOOL_KEYS) {
@@ -65,6 +81,7 @@ function load(): void {
     if (autoHide instanceof HTMLInputElement) {
       autoHide.value = String(clampAutoHideAfter(s.autoHideAfter ?? POPUP_DEFAULTS.autoHideAfter));
     }
+    syncAutoHideField(s.autoHideEnabled !== false);
   });
 }
 
@@ -72,6 +89,7 @@ for (const key of BOOL_KEYS) {
   const el = document.getElementById(key);
   if (!(el instanceof HTMLInputElement)) continue;
   el.addEventListener("change", () => {
+    if (key === "autoHideEnabled") syncAutoHideField(el.checked);
     chrome.storage.local.get(POPUP_DEFAULTS, (s: Partial<Settings>) => {
       chrome.storage.local.set({ ...POPUP_DEFAULTS, ...s, [key]: el.checked });
     });

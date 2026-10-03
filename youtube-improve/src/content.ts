@@ -33,6 +33,9 @@ interface Settings {
   blockEnabled: boolean;
   viewsEnabled: boolean;
   dontRecommendEnabled: boolean;
+  publicAvailable: boolean;
+  hideShorts: boolean;
+  autoHideEnabled: boolean;
   autoHideAfter: number;
 }
 
@@ -44,20 +47,69 @@ const DEFAULTS: Settings = {
   blockEnabled: true,
   viewsEnabled: true,
   dontRecommendEnabled: true,
+  publicAvailable: false,
+  hideShorts: true,
+  autoHideEnabled: true,
   autoHideAfter: 5,
 };
 
 type BoolSettingKey = Exclude<keyof Settings, "autoHideAfter">;
 
-const TOGGLES: { key: BoolSettingKey; label: string }[] = [
-  { key: "blur", label: "Блюр превью" },
-  { key: "hoverPlay", label: "При наведении" },
-  { key: "blurAvatars", label: "Блюр аватаров" },
-  { key: "blurLinks", label: "Блюр ссылок и соцсетей" },
-  { key: "blockEnabled", label: "Блокировка видео" },
-  { key: "viewsEnabled", label: "Учёт просмотров" },
-  { key: "dontRecommendEnabled", label: "Не рекомендовать канал (главная)" },
+const TOGGLES: { key: BoolSettingKey; label: string; hint: string }[] = [
+  {
+    key: "blur",
+    label: "Блюр превью",
+    hint: "Размывает обложки видео. Наведите курсор на карточку — блюр снимается, и превью видно.",
+  },
+  {
+    key: "hoverPlay",
+    label: "Превью при наведении",
+    hint: "Когда курсор на карточке, YouTube проигрывает короткий ролик. Выключите, если это мешает.",
+  },
+  {
+    key: "blurAvatars",
+    label: "Блюр аватаров",
+    hint: "Размывает аватарки каналов и авторов. При наведении на аватар блюр снимается.",
+  },
+  {
+    key: "blurLinks",
+    label: "Блюр ссылок",
+    hint: "Размывает ссылки на Telegram и другие соцсети. При наведении ссылку можно прочитать.",
+  },
+  {
+    key: "blockEnabled",
+    label: "Блок видео",
+    hint: "На карточке появляются кнопки «Блок видео» и «Блок канала». Заблокированное не открывается и остаётся размытым.",
+  },
+  {
+    key: "viewsEnabled",
+    label: "Счётчик просмотров",
+    hint: "Считает, сколько раз вы наводили курсор на карточку, и показывает это число на превью.",
+  },
+  {
+    key: "publicAvailable",
+    label: "Доступные без блюра",
+    hint: "Видео с пометкой «Сделать доступным» показывается с обычной обложкой, без блюра.",
+  },
+  {
+    key: "hideShorts",
+    label: "Скрывать Shorts",
+    hint: "Убирает полки Shorts и пункт Shorts в меню. Если выключить, страница перезагрузится.",
+  },
+  {
+    key: "autoHideEnabled",
+    label: "Автоскрытие",
+    hint: "Прячет видео, которое вы уже видели больше заданного числа раз. «Показать» возвращает карточку. Доступные видео не скрываются.",
+  },
+  {
+    key: "dontRecommendEnabled",
+    label: "Не рекомендовать",
+    hint: "После «Блок канала» на главной YouTube получает ту же команду, что и пункт «Не рекомендовать канал». Отдельной кнопки нет. В поиске и на странице видео это не срабатывает.",
+  },
 ];
+
+const AUTO_HIDE_HINT =
+  "После скольких наведений карточка скрывается. Работает, только когда автоскрытие включено.";
 
 const CARD_SEL =
   "ytd-rich-item-renderer,yt-lockup-view-model,ytd-rich-grid-media,ytd-video-renderer,ytd-compact-video-renderer,ytd-watch-card-compact-video-renderer,ytd-watch-card-hero-video-renderer,ytd-universal-watch-card-renderer";
@@ -225,10 +277,22 @@ function apply(): void {
   html.classList.toggle("yti-no-blur-links", !settings.blurLinks);
   html.classList.toggle("yti-no-block", !settings.blockEnabled);
   html.classList.toggle("yti-no-views", !settings.viewsEnabled);
+  html.classList.toggle("yti-public-available", settings.publicAvailable);
+  html.classList.toggle("yti-show-shorts", !settings.hideShorts);
   html.classList.remove("yti-no-infinite");
+  if (settingsLoaded) {
+    const shortsChanged = hideShortsApplied !== null && hideShortsApplied !== settings.hideShorts;
+    hideShortsApplied = settings.hideShorts;
+    persistHideShorts(settings.hideShorts);
+    if (shortsChanged) {
+      location.reload();
+      return;
+    }
+  }
   syncMenu();
   syncPreviews();
   syncBlurLinks();
+  syncShortsUi();
   syncBlockUi();
   syncViewsUi();
   syncPageNavState({
@@ -239,20 +303,46 @@ function apply(): void {
   });
 }
 
+let previewLockCard: Element | null = null;
+let hideShortsApplied: boolean | null = null;
+let settingsLoaded = false;
+
+function persistHideShorts(hide: boolean): void {
+  try {
+    localStorage.setItem("yti-hide-shorts", hide ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
 function syncPreviews(): void {
+  const hide = !settings.hoverPlay || previewLockCard != null;
   for (const el of queryAllDeep(PREVIEW_SEL)) {
     if (!(el instanceof HTMLElement)) continue;
-    if (settings.hoverPlay) {
+    if (!hide) {
       el.style.removeProperty("display");
       el.style.setProperty("pointer-events", "none", "important");
-    } else {
-      el.style.setProperty("display", "none", "important");
-      el.style.setProperty("pointer-events", "none", "important");
-      for (const v of el.querySelectorAll("video")) {
-        if (v instanceof HTMLVideoElement && !v.paused) v.pause();
-      }
+      continue;
+    }
+    el.style.setProperty("display", "none", "important");
+    el.style.setProperty("pointer-events", "none", "important");
+    for (const v of el.querySelectorAll("video")) {
+      if (v instanceof HTMLVideoElement && !v.paused) v.pause();
     }
   }
+}
+
+function lockPreview(card: Element): void {
+  previewLockCard = card;
+  document.documentElement.classList.add("yti-lock-preview");
+  syncPreviews();
+}
+
+function unlockPreview(): void {
+  if (!previewLockCard) return;
+  previewLockCard = null;
+  document.documentElement.classList.remove("yti-lock-preview");
+  syncPreviews();
 }
 
 // ── UI: кнопка «Ещё» + меню (главная и поиск) ──
@@ -309,22 +399,9 @@ function mountUi(): void {
     title.style.cssText = "padding:8px 16px 6px;font-size:16px;font-weight:500";
     menu.appendChild(title);
     for (const t of TOGGLES) {
-      const row = document.createElement("label");
-      row.style.cssText = "display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.dataset.key = t.key;
-      cb.checked = settings[t.key];
-      cb.onchange = () => {
-        settings = { ...settings, [t.key]: cb.checked };
-        storageSet(settings);
-        apply();
-      };
-      row.appendChild(cb);
-      row.appendChild(document.createTextNode(t.label));
-      menu.appendChild(row);
+      menu.appendChild(makeToggleRow(t));
+      if (t.key === "autoHideEnabled") mountAutoHideRow(menu);
     }
-    mountAutoHideRow(menu);
     mountBackupSection(menu);
     document.body.appendChild(menu);
   }
@@ -332,6 +409,24 @@ function mountUi(): void {
   positionBtn();
   syncMenu();
   updateUiVisibility();
+}
+
+function makeToggleRow(t: { key: BoolSettingKey; label: string; hint: string }): HTMLLabelElement {
+  const row = document.createElement("label");
+  row.style.cssText = "display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer";
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.dataset.key = t.key;
+  cb.checked = settings[t.key];
+  cb.onchange = () => {
+    settings = { ...settings, [t.key]: cb.checked };
+    storageSet(settings);
+    apply();
+  };
+  row.appendChild(cb);
+  row.appendChild(document.createTextNode(t.label));
+  bindSettingHint(row, t.hint);
+  return row;
 }
 
 function syncMenu(): void {
@@ -342,7 +437,14 @@ function syncMenu(): void {
     if (key) cb.checked = settings[key];
   }
   const autoHide = menu.querySelector("[data-yti-auto-hide]");
-  if (autoHide instanceof HTMLInputElement) autoHide.value = String(settings.autoHideAfter);
+  if (autoHide instanceof HTMLInputElement) {
+    autoHide.value = String(settings.autoHideAfter);
+    autoHide.disabled = !settings.autoHideEnabled;
+  }
+  const autoHideRow = menu.querySelector("[data-yti-auto-hide-row]");
+  if (autoHideRow instanceof HTMLElement) {
+    autoHideRow.style.opacity = settings.autoHideEnabled ? "1" : "0.45";
+  }
 }
 
 function clampAutoHideAfter(value: number): number {
@@ -350,8 +452,55 @@ function clampAutoHideAfter(value: number): number {
   return Math.min(99, Math.max(1, Math.floor(value)));
 }
 
+let settingTip: HTMLDivElement | null = null;
+
+function ensureSettingTip(): HTMLDivElement {
+  if (settingTip) return settingTip;
+  settingTip = document.createElement("div");
+  settingTip.id = "yti-tip";
+  settingTip.style.cssText =
+    "position:fixed;z-index:2147483647;display:none;max-width:260px;padding:8px 10px;" +
+    "background:#0f0f0f;color:#fff;border-radius:8px;font:12px/1.4 Roboto,Arial,sans-serif;" +
+    "pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.35)";
+  document.body.appendChild(settingTip);
+  return settingTip;
+}
+
+function showSettingTip(anchor: HTMLElement, text: string): void {
+  const el = ensureSettingTip();
+  el.textContent = text;
+  el.style.display = "block";
+  const rect = anchor.getBoundingClientRect();
+  const gap = 8;
+  const width = el.offsetWidth;
+  const height = el.offsetHeight;
+  let left = rect.right + gap;
+  if (left + width > window.innerWidth - gap) left = rect.left - width - gap;
+  left = Math.max(gap, left);
+  let top = rect.top + (rect.height - height) / 2;
+  top = Math.max(gap, Math.min(top, window.innerHeight - height - gap));
+  el.style.left = `${left}px`;
+  el.style.top = `${top}px`;
+}
+
+function hideSettingTip(): void {
+  if (settingTip) settingTip.style.display = "none";
+}
+
+function bindSettingHint(row: HTMLElement, hint: string): void {
+  row.addEventListener("pointerenter", () => {
+    row.style.background = "#f2f2f2";
+    showSettingTip(row, hint);
+  });
+  row.addEventListener("pointerleave", () => {
+    row.style.background = "";
+    hideSettingTip();
+  });
+}
+
 function mountAutoHideRow(menuEl: HTMLDivElement): void {
   const row = document.createElement("label");
+  row.dataset.ytiAutoHideRow = "1";
   row.style.cssText =
     "display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:default;font-size:13px;flex-wrap:wrap";
   const input = document.createElement("input");
@@ -369,11 +518,8 @@ function mountAutoHideRow(menuEl: HTMLDivElement): void {
     storageSet(settings);
     apply();
   };
-  row.append(
-    document.createTextNode("Автоскрытие после "),
-    input,
-    document.createTextNode(" просмотров"),
-  );
+  row.append(document.createTextNode("После "), input, document.createTextNode(" раз"));
+  bindSettingHint(row, AUTO_HIDE_HINT);
   menuEl.appendChild(row);
 }
 
@@ -534,6 +680,7 @@ function closeMenu(): void {
   if (!menu) return;
   menuOpen = false;
   menu.style.display = "none";
+  hideSettingTip();
 }
 
 // ── blur при наведении (класс yti-hover) ──
@@ -544,8 +691,18 @@ function onPointerOver(e: PointerEvent): void {
   let card: Element | null = null;
   for (const n of path) if (n.matches(CARD_SEL)) card = n;
   if (!card) return;
+  if (shouldSkipHover(card)) {
+    if (actionsCard) {
+      actionsCard.classList.remove("yti-actions-open");
+      actionsCard = null;
+    }
+    clearHover();
+    lockPreview(card);
+    return;
+  }
+  if (previewLockCard) unlockPreview();
   openActions(card);
-  if (isBlockedCard(card) || shouldSkipHover(card)) {
+  if (isBlockedCard(card)) {
     clearHover();
     return;
   }
@@ -589,6 +746,7 @@ function onPointerOut(e: PointerEvent): void {
       clearHover();
       hoverCard = null;
     }
+    if (previewLockCard && !(el && pointerStillOn(previewLockCard, el))) unlockPreview();
   });
 }
 
@@ -829,25 +987,53 @@ function syncBlurLinks(): void {
   markBlurLinks();
 }
 
+function markShortsHidden(el: HTMLElement): void {
+  el.dataset.ytiShortsHidden = "1";
+  el.style.setProperty("display", "none", "important");
+}
+
+function showHiddenShorts(): void {
+  for (const el of queryAllDeep("[data-yti-shorts-hidden]")) {
+    if (!(el instanceof HTMLElement)) continue;
+    el.style.removeProperty("display");
+    delete el.dataset.ytiShortsHidden;
+  }
+}
+
 function hideShortsShelves(): void {
   for (const shelf of queryAllDeep("ytd-rich-shelf-renderer, ytd-reel-shelf-renderer")) {
     if (!isShortsShelf(shelf)) continue;
-    if (shelf instanceof HTMLElement) shelf.style.setProperty("display", "none", "important");
+    if (shelf instanceof HTMLElement) markShortsHidden(shelf);
     const section = shelf.closest("ytd-rich-section-renderer");
-    if (section instanceof HTMLElement) section.style.setProperty("display", "none", "important");
+    if (section instanceof HTMLElement) markShortsHidden(section);
   }
+}
+
+function syncShortsUi(): void {
+  if (!settings.hideShorts) {
+    showHiddenShorts();
+    return;
+  }
+  hideShortsShelves();
 }
 
 function hideGuideEntry(el: Element): void {
   if (!GUIDE_TAGS.has(el.tagName)) return;
+  if (!settings.hideShorts) {
+    if (el instanceof HTMLElement && el.dataset.ytiShortsHidden) {
+      el.style.removeProperty("display");
+      delete el.dataset.ytiShortsHidden;
+    }
+    return;
+  }
   const root = el.shadowRoot ?? el;
   let hide = false;
   for (const a of root.querySelectorAll("a[href]")) {
     if (a instanceof HTMLAnchorElement && isShortsLink(a)) hide = true;
   }
   if (el instanceof HTMLElement) {
-    if (hide) el.style.setProperty("display", "none", "important");
-    else el.style.removeProperty("display");
+    if (hide) markShortsHidden(el);
+    else if (!el.dataset.ytiShortsHidden) el.style.removeProperty("display");
   }
 }
 
@@ -919,7 +1105,7 @@ function scan(full = false): void {
   mountUi();
   updateUiVisibility();
   syncPreviews();
-  hideShortsShelves();
+  syncShortsUi();
   syncBlurLinks();
   syncBlockUi();
   syncViewsUi();
@@ -934,6 +1120,7 @@ function boot(): void {
     feedPage: showsControls,
     onUpdate: () => scheduleScan(false),
     autoHideAfter: () => settings.autoHideAfter,
+    autoHideEnabled: () => settings.autoHideEnabled,
   });
   initBlock({
     enabled: () => settings.blockEnabled,
@@ -948,6 +1135,7 @@ function boot(): void {
   apply();
   storageGet((s) => {
     settings = s;
+    settingsLoaded = true;
     apply();
   });
   try {

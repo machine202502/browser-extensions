@@ -25,6 +25,9 @@ export interface SettingsSnapshot {
   blockEnabled: boolean;
   viewsEnabled: boolean;
   dontRecommendEnabled: boolean;
+  publicAvailable: boolean;
+  hideShorts: boolean;
+  autoHideEnabled: boolean;
   autoHideAfter: number;
 }
 
@@ -49,6 +52,9 @@ export const DEFAULT_SETTINGS: SettingsSnapshot = {
   blockEnabled: true,
   viewsEnabled: true,
   dontRecommendEnabled: true,
+  publicAvailable: false,
+  hideShorts: true,
+  autoHideEnabled: true,
   autoHideAfter: 5,
 };
 

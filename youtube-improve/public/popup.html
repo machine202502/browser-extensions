@@ -16,6 +16,34 @@
 
     label { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; }
 
+    label.setting { flex-wrap: wrap; margin: 0 -6px; padding: 8px 6px; border-radius: 8px; }
+
+    label.setting:hover { background: #f2f2f2; }
+
+    label.setting:hover::after {
+
+      content: attr(data-hint);
+
+      flex: 1 0 100%;
+
+      margin-top: 6px;
+
+      padding: 8px 10px;
+
+      border-radius: 8px;
+
+      background: #0f0f0f;
+
+      color: #fff;
+
+      font-size: 12px;
+
+      font-weight: 400;
+
+      line-height: 1.4;
+
+    }
+
     label.row-tight { padding: 4px 0; font-size: 13px; }
 
     label.row-number { padding: 6px 0; gap: 8px; font-size: 13px; cursor: default; }
@@ -54,21 +82,27 @@
 
   <h1>Улучшения</h1>
 
-  <label><input type="checkbox" id="blur" /> Блюр превью</label>
+  <label class="setting" data-hint="Размывает обложки видео. Наведите курсор на карточку — блюр снимается, и превью видно."><input type="checkbox" id="blur" /> Блюр превью</label>
 
-  <label><input type="checkbox" id="hoverPlay" /> При наведении</label>
+  <label class="setting" data-hint="Когда курсор на карточке, YouTube проигрывает короткий ролик. Выключите, если это мешает."><input type="checkbox" id="hoverPlay" /> Превью при наведении</label>
 
-  <label><input type="checkbox" id="blurAvatars" /> Блюр аватаров</label>
+  <label class="setting" data-hint="Размывает аватарки каналов и авторов. При наведении на аватар блюр снимается."><input type="checkbox" id="blurAvatars" /> Блюр аватаров</label>
 
-  <label><input type="checkbox" id="blurLinks" /> Блюр ссылок и соцсетей</label>
+  <label class="setting" data-hint="Размывает ссылки на Telegram и другие соцсети. При наведении ссылку можно прочитать."><input type="checkbox" id="blurLinks" /> Блюр ссылок</label>
 
-  <label><input type="checkbox" id="blockEnabled" /> Блокировка видео</label>
+  <label class="setting" data-hint="На карточке появляются кнопки «Блок видео» и «Блок канала». Заблокированное не открывается и остаётся размытым."><input type="checkbox" id="blockEnabled" /> Блок видео</label>
 
-  <label><input type="checkbox" id="viewsEnabled" /> Учёт просмотров</label>
+  <label class="setting" data-hint="Считает, сколько раз вы наводили курсор на карточку, и показывает это число на превью."><input type="checkbox" id="viewsEnabled" /> Счётчик просмотров</label>
 
-  <label class="row-number">Автоскрытие после <input type="number" id="autoHideAfter" min="1" max="99" step="1" value="5" /> просмотров</label>
+  <label class="setting" data-hint="Видео с пометкой «Сделать доступным» показывается с обычной обложкой, без блюра."><input type="checkbox" id="publicAvailable" /> Доступные без блюра</label>
 
-  <label><input type="checkbox" id="dontRecommendEnabled" /> Не рекомендовать канал (главная)</label>
+  <label class="setting" data-hint="Убирает полки Shorts и пункт Shorts в меню. Если выключить, страница перезагрузится."><input type="checkbox" id="hideShorts" checked /> Скрывать Shorts</label>
+
+  <label class="setting" data-hint="Прячет видео, которое вы уже видели больше заданного числа раз. «Показать» возвращает карточку. Доступные видео не скрываются."><input type="checkbox" id="autoHideEnabled" checked /> Автоскрытие</label>
+
+  <label class="setting row-number" id="autoHideAfterRow" data-hint="После скольких наведений карточка скрывается. Работает, только когда автоскрытие включено.">После <input type="number" id="autoHideAfter" min="1" max="99" step="1" value="5" /> раз</label>
+
+  <label class="setting" data-hint="После «Блок канала» на главной YouTube получает ту же команду, что и пункт «Не рекомендовать канал». Отдельной кнопки нет. В поиске и на странице видео это не срабатывает."><input type="checkbox" id="dontRecommendEnabled" /> Не рекомендовать</label>
 
 
 
