@@ -173,7 +173,6 @@ export function onCardHovered(card: Element): void {
   const { videoId, channelIds } = getCardIds(outer);
   if (!videoId) return;
   if (!getBlockReason(videoId, channelIds) && !isHiddenVideo(videoId)) recordView(outer, videoId);
-  syncViewsCard(outer);
 }
 
 function revealVideo(videoId: string): void {
@@ -235,8 +234,13 @@ function makeBtn(label: string, bg: string, fg: string, onClick: (e: MouseEvent)
 
 /** Добавляет «Сделать доступным» в панель кнопок превью (вызывается из block.ts). */
 export function syncAvailableButton(ui: HTMLElement, videoId: string): void {
-  ui.querySelector(".yti-available-btn")?.remove();
-  if (!isEnabled() || !isFeedPage() || isAvailableVideo(videoId)) return;
+  const existing = ui.querySelector(".yti-available-btn");
+  if (!isEnabled() || !isFeedPage() || isAvailableVideo(videoId)) {
+    existing?.remove();
+    return;
+  }
+  if (existing instanceof HTMLButtonElement && existing.dataset.ytiVideoId === videoId) return;
+  existing?.remove();
   const btn = makeBtn("Сделать доступным", "rgba(46,125,50,.92)", "#fff", async () => {
     const ok = await showConfirm(
       "Сделать доступным?",
@@ -246,6 +250,7 @@ export function syncAvailableButton(ui: HTMLElement, videoId: string): void {
     if (ok) makeAvailable(videoId);
   });
   btn.className = "yti-available-btn";
+  btn.dataset.ytiVideoId = videoId;
   ui.appendChild(btn);
 }
 
@@ -353,6 +358,9 @@ function queueBadgeRetry(card: HTMLElement): void {
 }
 
 function layoutHostLayer(layer: HTMLElement, area: ThumbArea): void {
+  const sig = `${area.top},${area.left},${area.width},${area.height}`;
+  if (layer.dataset.ytiArea === sig) return;
+  layer.dataset.ytiArea = sig;
   layer.style.cssText =
     `${BADGE_VISIBLE}position:absolute;z-index:50;overflow:visible;pointer-events:none;border-radius:12px;` +
     `top:${area.top}px;left:${area.left}px;width:${area.width}px;height:${area.height}px;`;
@@ -381,8 +389,10 @@ function getBadgeLayer(card: HTMLElement, videoId: string): HTMLElement | null {
   }
   layoutHostLayer(layer, area);
   const before = mount.querySelector(":scope > .yti-views-ui, :scope > .yti-block-ui");
-  if (before) mount.insertBefore(layer, before);
-  else mount.appendChild(layer);
+  if (layer.parentElement !== mount || layer.nextElementSibling !== before) {
+    if (before) mount.insertBefore(layer, before);
+    else mount.appendChild(layer);
+  }
   return layer;
 }
 
@@ -460,18 +470,7 @@ function viewsOnlyUi(card: HTMLElement): HTMLElement | null {
 }
 
 function bindViewsUiHover(mount: HTMLElement): void {
-  if (mount.dataset.ytiViewsUiBound) return;
   mount.dataset.ytiViewsUiBound = "1";
-  mount.addEventListener("mouseenter", () => {
-    for (const el of mount.querySelectorAll(":scope > .yti-views-ui")) {
-      if (el instanceof HTMLElement) el.style.opacity = "1";
-    }
-  });
-  mount.addEventListener("mouseleave", () => {
-    for (const el of mount.querySelectorAll(":scope > .yti-views-ui")) {
-      if (el instanceof HTMLElement) el.style.opacity = "0";
-    }
-  });
 }
 
 function mountThumbViewsUi(card: HTMLElement, mount: HTMLElement): HTMLElement {
@@ -613,18 +612,21 @@ function syncViewsCard(card: Element): void {
     findViewsHost(card)?.querySelector(":scope > .yti-views-ui")?.remove();
     if (mount) {
       const ui = mountThumbViewsUi(card, mount);
-      ui.replaceChildren();
-      ui.style.opacity = "0";
-      ui.appendChild(
-        makeBtn("Показать", "#1565c0", "#fff", async () => {
-          const ok = await showConfirm(
-            "Показать видео?",
-            "Видео снова станет видимым в ленте.",
-            { confirmLabel: "Показать", confirmBg: "#1565c0" },
-          );
-          if (ok) revealVideo(videoId);
-        }),
-      );
+      const key = `show|${videoId}`;
+      if (ui.dataset.ytiActions !== key) {
+        ui.dataset.ytiActions = key;
+        ui.replaceChildren();
+        ui.appendChild(
+          makeBtn("Показать", "#1565c0", "#fff", async () => {
+            const ok = await showConfirm(
+              "Показать видео?",
+              "Видео снова станет видимым в ленте.",
+              { confirmLabel: "Показать", confirmBg: "#1565c0" },
+            );
+            if (ok) revealVideo(videoId);
+          }),
+        );
+      }
     }
     return;
   }

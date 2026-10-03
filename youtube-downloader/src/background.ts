@@ -16,9 +16,26 @@ type NativeReply = {
 
 type PageMessage = { type?: string; url?: string; format?: string; label?: string };
 
-const jobs = new Map<number, { tabId: number; videoId: string; resolve: (reply: NativeReply) => void }>();
+type Job = {
+  tabId: number;
+  videoId: string;
+  action: string;
+  url: string;
+  format: string;
+  resolve: (reply: NativeReply) => void;
+};
+
+type DownloadRetry = {
+  url: string;
+  format: string;
+  tabId: number;
+  videoId: string;
+};
+
+const jobs = new Map<number, Job>();
 let port: chrome.runtime.Port | null = null;
 let seq = 0;
+let retrySeq = 0;
 
 function videoUrl(raw: string): string | null {
   let url: URL;
@@ -64,6 +81,23 @@ function safeFormat(value: string): boolean {
   return /^[A-Za-z0-9*+[\]=^.<>_,-]+$/.test(value) && value.length <= 160;
 }
 
+function notifyFailure(job: Job, error: string): void {
+  if (job.action !== "download" || !job.url || !job.format || error === "Загрузка отменена") return;
+  const notificationId = `ytdl-retry-${Date.now()}-${++retrySeq}`;
+  const retry: DownloadRetry = { url: job.url, format: job.format, tabId: job.tabId, videoId: job.videoId };
+  const message = error.replace(/\s+/g, " ").trim().slice(0, 180) || "Не удалось скачать";
+  void chrome.storage.session.set({ [notificationId]: retry }).then(() => {
+    chrome.notifications.create(notificationId, {
+      type: "basic",
+      iconUrl: chrome.runtime.getURL("icon.png"),
+      title: "Не удалось скачать",
+      message,
+      buttons: [{ title: "Попробовать ещё раз" }],
+      requireInteraction: true,
+    });
+  });
+}
+
 function connect(): chrome.runtime.Port {
   if (port) return port;
   const next = chrome.runtime.connectNative("com.youtube.downloader");
@@ -86,17 +120,21 @@ function connect(): chrome.runtime.Port {
         message: `${filename} — папка «Загрузки»`,
       });
     } else if (message.ok === false || message.phase === "error") {
-      tell(job.tabId, { type: "ytdl-status", phase: "error", videoId: job.videoId, error: message.error || "Не удалось скачать" });
+      const error = message.error || "Не удалось скачать";
+      tell(job.tabId, { type: "ytdl-status", phase: "error", videoId: job.videoId, error });
+      notifyFailure(job, error);
     }
     job.resolve(message);
   });
   next.onDisconnect.addListener(() => {
     port = null;
     const reason = chrome.runtime.lastError?.message || "yt-dlp закрылся";
+    const error = reason.includes("not found") ? "Перезагрузите расширение: помощник yt-dlp не подключён." : "Скачивание прервалось";
     for (const [id, job] of jobs) {
       jobs.delete(id);
-      job.resolve({ ok: false, error: reason.includes("not found") ? "Перезагрузите расширение: помощник yt-dlp не подключён." : reason });
-      tell(job.tabId, { type: "ytdl-status", phase: "error", videoId: job.videoId, error: "Скачивание прервалось" });
+      job.resolve({ ok: false, error: reason.includes("not found") ? error : reason });
+      tell(job.tabId, { type: "ytdl-status", phase: "error", videoId: job.videoId, error });
+      notifyFailure(job, error);
     }
   });
   port = next;
@@ -105,8 +143,11 @@ function connect(): chrome.runtime.Port {
 
 function ask(tabId: number, payload: Record<string, unknown>, videoId: string): Promise<NativeReply> {
   const id = ++seq;
+  const action = typeof payload.action === "string" ? payload.action : "";
+  const url = typeof payload.url === "string" ? payload.url : "";
+  const format = typeof payload.format === "string" ? payload.format : "";
   return new Promise((resolve) => {
-    jobs.set(id, { tabId, videoId, resolve });
+    jobs.set(id, { tabId, videoId, action, url, format, resolve });
     try {
       connect().postMessage({ ...payload, id });
     } catch (error) {
@@ -115,6 +156,27 @@ function ask(tabId: number, payload: Record<string, unknown>, videoId: string): 
     }
   });
 }
+
+function beginDownload(tabId: number, url: string, format: string): Promise<NativeReply> {
+  const videoId = videoIdOf(url);
+  tell(tabId, { type: "ytdl-status", phase: "progress", videoId, text: "Скачиваю…" });
+  return ask(tabId, { action: "download", url, format }, videoId);
+}
+
+chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
+  if (buttonIndex !== 0 || !notificationId.startsWith("ytdl-retry-")) return;
+  void chrome.storage.session.get(notificationId).then((stored) => {
+    const retry = stored[notificationId] as DownloadRetry | undefined;
+    void chrome.storage.session.remove(notificationId);
+    void chrome.notifications.clear(notificationId);
+    if (!retry || typeof retry.url !== "string" || typeof retry.format !== "string" || typeof retry.tabId !== "number" || !safeFormat(retry.format)) return;
+    void beginDownload(retry.tabId, retry.url, retry.format);
+  });
+});
+
+chrome.notifications.onClosed.addListener((notificationId) => {
+  if (notificationId.startsWith("ytdl-retry-")) void chrome.storage.session.remove(notificationId);
+});
 
 chrome.runtime.onMessage.addListener((message: PageMessage, sender, sendResponse) => {
   if ((message?.type !== "ytdl-formats" && message?.type !== "ytdl-download") || sender.tab?.id == null) return;
@@ -132,7 +194,7 @@ chrome.runtime.onMessage.addListener((message: PageMessage, sender, sendResponse
     sendResponse({ ok: false, error: "Некорректное разрешение" });
     return;
   }
-  void ask(tabId, { action: "download", url, format: message.format }, videoIdOf(url)).then((reply) => {
+  void beginDownload(tabId, url, message.format).then((reply) => {
     if (reply.phase === "done") sendResponse({ ok: true, filename: reply.filename });
     else sendResponse({ ok: reply.ok === true && !reply.error, error: reply.error, filename: reply.filename });
   });

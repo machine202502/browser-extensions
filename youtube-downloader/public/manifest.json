@@ -5,7 +5,8 @@
   "description": "Скачивает ролик YouTube через yt-dlp в выбранном разрешении.",
   "permissions": [
     "nativeMessaging",
-    "notifications"
+    "notifications",
+    "storage"
   ],
   "background": {
     "service_worker": "background.js"

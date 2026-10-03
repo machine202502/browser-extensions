@@ -17,6 +17,7 @@ import {
 } from "./backup";
 import {
   initViews,
+  isAvailableVideo,
   isHiddenVideo,
   onCardHovered,
   shouldSkipHover,
@@ -210,6 +211,7 @@ let btn: HTMLButtonElement | null = null;
 let menu: HTMLDivElement | null = null;
 let menuOpen = false;
 let hoverCard: Element | null = null;
+let actionsCard: Element | null = null;
 const hovered = new Set<Element>();
 const watched = new WeakSet<Node>();
 
@@ -238,11 +240,11 @@ function apply(): void {
 }
 
 function syncPreviews(): void {
-  for (const el of document.querySelectorAll(PREVIEW_SEL)) {
+  for (const el of queryAllDeep(PREVIEW_SEL)) {
     if (!(el instanceof HTMLElement)) continue;
     if (settings.hoverPlay) {
       el.style.removeProperty("display");
-      el.style.removeProperty("pointer-events");
+      el.style.setProperty("pointer-events", "none", "important");
     } else {
       el.style.setProperty("display", "none", "important");
       el.style.setProperty("pointer-events", "none", "important");
@@ -542,6 +544,7 @@ function onPointerOver(e: PointerEvent): void {
   let card: Element | null = null;
   for (const n of path) if (n.matches(CARD_SEL)) card = n;
   if (!card) return;
+  openActions(card);
   if (isBlockedCard(card) || shouldSkipHover(card)) {
     clearHover();
     return;
@@ -559,26 +562,53 @@ function onPointerOver(e: PointerEvent): void {
   }
 }
 
+function openActions(card: Element): void {
+  if (actionsCard === card) return;
+  actionsCard?.classList.remove("yti-actions-open");
+  actionsCard = card;
+  card.classList.add("yti-actions-open");
+}
+
 function onPointerOut(e: PointerEvent): void {
-  if (!hoverCard) return;
-  const card = hoverCard;
-  if (e.relatedTarget instanceof Element && onCard(e.relatedTarget, card)) return;
+  if (!hoverCard && !actionsCard) return;
+  const next = e.relatedTarget instanceof Element ? e.relatedTarget : null;
+  const hoverAt = hoverCard;
+  const actionsAt = actionsCard;
+  if (actionsAt && next && pointerStillOn(actionsAt, next) && (!hoverAt || pointerStillOn(hoverAt, next))) {
+    return;
+  }
   const { clientX: x, clientY: y } = e;
   requestAnimationFrame(() => {
-    if (hoverCard !== card) return;
     const under = document.elementFromPoint(x, y);
-    if (under instanceof Element && onCard(under, card)) return;
-    clearHover();
-    if (hoverCard === card) hoverCard = null;
+    const el = under instanceof Element ? under : null;
+    if (actionsCard === actionsAt && actionsAt && !(el && pointerStillOn(actionsAt, el))) {
+      actionsAt.classList.remove("yti-actions-open");
+      actionsCard = null;
+    }
+    if (hoverCard === hoverAt && hoverAt && !(el && pointerStillOn(hoverAt, el))) {
+      clearHover();
+      hoverCard = null;
+    }
   });
 }
 
-function onCard(node: Element, card: Element): boolean {
-  for (let n: Element | null = node; n; n = n.parentElement) {
+function pointerStillOn(card: Element, node: Element): boolean {
+  let n: Node | null = node;
+  while (n) {
     if (n === card) return true;
-    if (n.matches(PREVIEW_SEL)) return true;
+    if (n instanceof Element && n.matches(PREVIEW_SEL)) return true;
+    const root = n.getRootNode();
+    if (root instanceof ShadowRoot) {
+      n = root.host;
+      continue;
+    }
+    n = n.parentNode;
   }
   return false;
+}
+
+function onCard(node: Element, card: Element): boolean {
+  return pointerStillOn(card, node);
 }
 
 function clearHover(): void {
@@ -855,10 +885,27 @@ function scheduleScan(full = false): void {
   scanTimer = window.setTimeout(() => scan(full), full ? 0 : 250);
 }
 
+const OWN_UI =
+  ".yti-block-ui,.yti-views-ui,.yti-badges-layer,.yti-block-strike,.yti-thumb-shield," +
+  ".yti-mount-shield,.yti-first-badge,.yti-hidden-badge,.yti-block-wrap,#yti-btn,#yti-menu,#yti-block-modal";
+
+function isOwnUi(node: Node | null): boolean {
+  const el = node instanceof Element ? node : node?.parentElement ?? null;
+  return !!el && (el.matches(OWN_UI) || el.closest(OWN_UI) != null);
+}
+
 function watch(root: Node): void {
   if (watched.has(root)) return;
   watched.add(root);
-  new MutationObserver(() => scheduleScan(false)).observe(root, {
+  new MutationObserver((records) => {
+    const external = records.some((record) => {
+      if (isOwnUi(record.target)) return false;
+      const nodes = [...record.addedNodes, ...record.removedNodes];
+      if (nodes.length === 0) return true;
+      return nodes.some((node) => !isOwnUi(node));
+    });
+    if (external) scheduleScan(false);
+  }).observe(root, {
     childList: true,
     subtree: true,
     attributes: true,
@@ -895,6 +942,8 @@ function boot(): void {
     syncExtraButtons: (ui, videoId) => {
       if (settings.viewsEnabled) syncAvailableButton(ui, videoId);
     },
+    extraActionKey: (videoId) =>
+      settings.viewsEnabled && !isAvailableVideo(videoId) ? "available" : "",
   });
   apply();
   storageGet((s) => {

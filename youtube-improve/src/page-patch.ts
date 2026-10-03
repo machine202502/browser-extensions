@@ -50,19 +50,37 @@ import { installDontRecommend, maybeIngestResponse } from "./dont-recommend";
     return false;
   }
 
+  /** Полка Shorts вложена в richSectionRenderer → content → richShelfRenderer.
+   *  jsonLooksLikeShorts видит только сам shelf, и секция остаётся пустой оболочкой. */
+  function wrapsShortsShelf(value: unknown): boolean {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+    const o = value as Record<string, unknown>;
+    if (jsonLooksLikeShorts(o)) return true;
+    const content = o.content;
+    if (content && typeof content === "object" && !Array.isArray(content) && jsonLooksLikeShorts(content)) {
+      return true;
+    }
+    const section = o.richSectionRenderer;
+    if (section && typeof section === "object" && wrapsShortsShelf(section)) return true;
+    const item = o.richItemRenderer;
+    if (item && typeof item === "object" && wrapsShortsShelf(item)) return true;
+    return false;
+  }
+
   function stripShortsDeep(value: unknown): unknown {
     if (Array.isArray(value)) {
       const out: unknown[] = [];
       for (const item of value) {
+        if (wrapsShortsShelf(item)) continue;
         const cleaned = stripShortsDeep(item);
         if (cleaned === undefined) continue;
-        if (jsonLooksLikeShorts(cleaned)) continue;
+        if (wrapsShortsShelf(cleaned)) continue;
         out.push(cleaned);
       }
       return out;
     }
     if (value && typeof value === "object") {
-      if (jsonLooksLikeShorts(value)) return undefined;
+      if (wrapsShortsShelf(value)) return undefined;
       const src = value as Record<string, unknown>;
       const out: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(src)) {

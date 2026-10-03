@@ -33,17 +33,20 @@ let onChange: ChangeCb = () => undefined;
 let isEnabled: () => boolean = () => false;
 let checkHidden: (videoId: string | null) => boolean = () => false;
 let syncExtraButtons: ((ui: HTMLElement, videoId: string) => void) | undefined;
+let extraActionKey: (videoId: string) => string = () => "";
 
 export function initBlock(opts: {
   enabled: () => boolean;
   onUpdate: ChangeCb;
   isHidden?: (videoId: string | null) => boolean;
   syncExtraButtons?: (ui: HTMLElement, videoId: string) => void;
+  extraActionKey?: (videoId: string) => string;
 }): void {
   isEnabled = opts.enabled;
   onChange = opts.onUpdate;
   checkHidden = opts.isHidden ?? (() => false);
   syncExtraButtons = opts.syncExtraButtons;
+  extraActionKey = opts.extraActionKey ?? (() => "");
   loadBlocks();
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
@@ -348,12 +351,13 @@ function wrapThumb(thumb: HTMLElement): HTMLElement {
   return wrap;
 }
 
+/** Старые оверлеи внутри превью. Живая панель висит на ссылке превью — её не трогать. */
 function cleanupLegacyOverlays(card: Element): void {
-  for (const el of queryInCard(card, `${THUMB_TARGET_SEL},${ANCHOR_HOST_SEL}`)) {
-    el.querySelector(".yti-block-strike")?.remove();
-    el.querySelector(".yti-block-ui")?.remove();
+  for (const el of queryInCard(card, THUMB_TARGET_SEL)) {
+    el.querySelector(":scope > .yti-block-strike")?.remove();
+    el.querySelector(":scope > .yti-block-ui")?.remove();
     el.classList.remove("yti-has-block-ui");
-    delete (el as HTMLElement).dataset.ytiBlockUiBound;
+    delete el.dataset.ytiBlockUiBound;
   }
 }
 
@@ -442,11 +446,13 @@ export function layoutOnThumb(
   extra = "",
 ): void {
   ensureHostPosition(mount);
+  const opacity = el.style.opacity;
   const area = thumbAreaOnMount(card, mount);
   el.style.cssText = area
     ? `position:absolute;z-index:${zIndex};top:${area.top}px;left:${area.left}px;` +
       `width:${area.width}px;height:${area.height}px;${extra}`
     : `position:absolute;inset:0;z-index:${zIndex};${extra}`;
+  if (opacity) el.style.opacity = opacity;
 }
 
 /** Снимает href с превью — page-patch блокирует навигацию по ID из dataset. */
@@ -544,35 +550,26 @@ function clearMountOverlay(mount: HTMLElement): void {
   delete mount.dataset.ytiBlockUiBound;
 }
 
+function bindOverlayHover(host: HTMLElement): void {
+  host.dataset.ytiBlockUiBound = "1";
+}
+
+const BLOCK_UI_LAYOUT =
+  "display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;align-content:flex-end;" +
+  "gap:6px;padding:8px;pointer-events:none;" +
+  "background:linear-gradient(transparent 40%,rgba(0,0,0,.45));opacity:0;transition:opacity .15s;border-radius:12px;";
+
 function mountOverlayOnMount(mount: HTMLElement, card: Element): HTMLElement {
-  clearMountOverlay(mount);
-  let ui = document.createElement("div");
-  ui.className = "yti-block-ui";
-  mount.appendChild(ui);
-  layoutOnThumb(
-    ui,
-    mount,
-    card,
-    100,
-    "display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;align-content:flex-end;" +
-      "gap:6px;padding:8px;pointer-events:none;" +
-      "background:linear-gradient(transparent 40%,rgba(0,0,0,.45));opacity:0;transition:opacity .15s;border-radius:12px;",
-  );
-  mount.appendChild(ui);
-  mount.classList.add("yti-has-block-ui");
-  if (!mount.dataset.ytiBlockUiBound) {
-    mount.dataset.ytiBlockUiBound = "1";
-    mount.addEventListener("mouseenter", () => {
-      for (const el of mount.querySelectorAll(":scope > .yti-block-ui")) {
-        if (el instanceof HTMLElement) el.style.opacity = "1";
-      }
-    });
-    mount.addEventListener("mouseleave", () => {
-      for (const el of mount.querySelectorAll(":scope > .yti-block-ui")) {
-        if (el instanceof HTMLElement) el.style.opacity = "0";
-      }
-    });
+  let ui = mount.querySelector(":scope > .yti-block-ui") as HTMLElement | null;
+  if (!ui) {
+    ui = document.createElement("div");
+    ui.className = "yti-block-ui";
+    ui.style.opacity = "0";
+    mount.appendChild(ui);
   }
+  layoutOnThumb(ui, mount, card, 100, BLOCK_UI_LAYOUT);
+  mount.classList.add("yti-has-block-ui");
+  bindOverlayHover(mount);
   return ui;
 }
 
@@ -614,18 +611,15 @@ function mountOverlay(host: HTMLElement): HTMLElement {
     "background:linear-gradient(transparent 40%,rgba(0,0,0,.45));opacity:0;transition:opacity .15s;border-radius:inherit";
   host.appendChild(ui);
   host.classList.add("yti-has-block-ui");
-  if (!host.dataset.ytiBlockUiBound) {
-    host.dataset.ytiBlockUiBound = "1";
-    host.addEventListener("mouseenter", () => {
-      const el = host.querySelector(":scope > .yti-block-ui") as HTMLElement | null;
-      if (el) el.style.opacity = "1";
-    });
-    host.addEventListener("mouseleave", () => {
-      const el = host.querySelector(":scope > .yti-block-ui") as HTMLElement | null;
-      if (el) el.style.opacity = "0";
-    });
-  }
+  bindOverlayHover(host);
   return ui;
+}
+
+function paintActions(ui: HTMLElement, key: string, paint: () => void): void {
+  if (ui.dataset.ytiActions === key) return;
+  ui.dataset.ytiActions = key;
+  ui.replaceChildren();
+  paint();
 }
 
 function unwrapIfEmpty(host: HTMLElement): void {
@@ -695,33 +689,34 @@ function syncCard(card: Element): void {
     syncMountClickBlock(card, true);
     if (host) {
       syncHostShield(host, true);
-      host.querySelector(":scope > .yti-block-ui")?.remove();
+      if (host !== mount) host.querySelector(":scope > .yti-block-ui")?.remove();
       mountStrike(host);
     }
     if (!mount) return;
     const ui = mountOverlayOnMount(mount, card);
-    ui.replaceChildren();
-    ui.style.opacity = "0";
     const label = reason === "channel" ? "Разблокировать канал" : "Разблокировать видео";
-    ui.appendChild(
-      makeBtn(label, "#2e7d32", "#fff", async () => {
-        if (reason === "channel" && channelIds.length > 0) {
-          const ok = await showConfirm(
-            "Разблокировать канал?",
-            "Видео этого канала снова будут показываться в ленте на этом браузере.",
-            { confirmLabel: "Разблокировать", confirmBg: "#2e7d32" },
-          );
-          if (ok) unblockChannelFromCard(card);
-        } else if (videoId) {
-          const ok = await showConfirm(
-            "Разблокировать видео?",
-            "Это видео снова будет показываться в ленте на этом браузере.",
-            { confirmLabel: "Разблокировать", confirmBg: "#2e7d32" },
-          );
-          if (ok) unblockVideo(videoId);
-        }
-      }),
-    );
+    const channelKey = channelIds.slice().sort().join(",");
+    paintActions(ui, `blocked|${reason}|${videoId ?? ""}|${channelKey}`, () => {
+      ui.appendChild(
+        makeBtn(label, "#2e7d32", "#fff", async () => {
+          if (reason === "channel" && channelIds.length > 0) {
+            const ok = await showConfirm(
+              "Разблокировать канал?",
+              "Видео этого канала снова будут показываться в ленте на этом браузере.",
+              { confirmLabel: "Разблокировать", confirmBg: "#2e7d32" },
+            );
+            if (ok) unblockChannelFromCard(card);
+          } else if (videoId) {
+            const ok = await showConfirm(
+              "Разблокировать видео?",
+              "Это видео снова будет показываться в ленте на этом браузере.",
+              { confirmLabel: "Разблокировать", confirmBg: "#2e7d32" },
+            );
+            if (ok) unblockVideo(videoId);
+          }
+        }),
+      );
+    });
     return;
   }
 
@@ -744,30 +739,35 @@ function syncCard(card: Element): void {
 
   syncHostShield(host, false);
   clearStrike(host);
+  if (!videoId && channelIds.length === 0) {
+    clearOverlay(host);
+    return;
+  }
   const ui = mountOverlay(host);
-  ui.replaceChildren();
-  ui.style.opacity = "0";
-  if (videoId) {
-    ui.appendChild(
-      makeBtn("Блок видео", "rgba(0,0,0,.72)", "#fff", async () => {
-        const ok = await showConfirm("Заблокировать видео?", "Это видео будет скрыто в ленте на этом браузере.");
-        if (ok) blockVideo(videoId);
-      }),
-    );
-  }
-  if (channelIds.length > 0) {
-    ui.appendChild(
-      makeBtn("Блок канала", "rgba(198,40,40,.9)", "#fff", async () => {
-        const ok = await showConfirm(
-          "Заблокировать канал?",
-          "Все видео этого канала будут скрыты в ленте на этом браузере.",
-        );
-        if (ok) blockChannelFromCard(card);
-      }),
-    );
-  }
-  if (videoId) syncExtraButtons?.(ui, videoId);
-  if (!videoId && channelIds.length === 0) clearOverlay(host);
+  const channelKey = channelIds.slice().sort().join(",");
+  const key = `open|${videoId ?? ""}|${channelKey}|${videoId ? extraActionKey(videoId) : ""}`;
+  paintActions(ui, key, () => {
+    if (videoId) {
+      ui.appendChild(
+        makeBtn("Блок видео", "rgba(0,0,0,.72)", "#fff", async () => {
+          const ok = await showConfirm("Заблокировать видео?", "Это видео будет скрыто в ленте на этом браузере.");
+          if (ok) blockVideo(videoId);
+        }),
+      );
+    }
+    if (channelIds.length > 0) {
+      ui.appendChild(
+        makeBtn("Блок канала", "rgba(198,40,40,.9)", "#fff", async () => {
+          const ok = await showConfirm(
+            "Заблокировать канал?",
+            "Все видео этого канала будут скрыты в ленте на этом браузере.",
+          );
+          if (ok) blockChannelFromCard(card);
+        }),
+      );
+    }
+    if (videoId) syncExtraButtons?.(ui, videoId);
+  });
 }
 
 function queryCardsDeep(): Element[] {

@@ -304,7 +304,11 @@ function boot(): void {
     if (message.phase === "progress") {
       running.add(message.videoId);
       runningText.set(message.videoId, message.text || "Скачиваю…");
-      if (here) setStatus(message.text || "Скачиваю…");
+      if (here) {
+        setRowsDisabled(true);
+        setStatus(message.text || "Скачиваю…");
+        if (toastEl) toastEl.hidden = true;
+      }
       return;
     }
     if (message.phase !== "done" && message.phase !== "error") return;

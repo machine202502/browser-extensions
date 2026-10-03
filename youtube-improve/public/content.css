@@ -152,6 +152,12 @@ html.yti-no-blur .yti-hover yt-img-shadow {
   filter: none !important;
 }
 
+#video-preview,
+ytd-video-preview,
+ytd-video-preview-loader {
+  pointer-events: none !important;
+}
+
 html.yti-no-hover #video-preview,
 html.yti-no-hover ytd-video-preview,
 html.yti-no-hover ytd-video-preview-loader {
@@ -253,7 +259,9 @@ html.yti-no-blur-links span.yti-blur-text {
 }
 
 /* ── Blocked video / channel ── */
-html:not(.yti-no-block) .yti-has-block-ui:hover .yti-block-ui {
+html:not(.yti-no-block) .yti-actions-open .yti-block-ui,
+html:not(.yti-no-block) .yti-actions-open.yti-has-block-ui > .yti-block-ui,
+:host-context(.yti-actions-open) .yti-block-ui {
   opacity: 1 !important;
 }
 
@@ -457,8 +465,8 @@ a.ytLockupViewModelContentImage:focus-within ytd-thumbnail.yti-blocked-thumb,
 }
 
 /* ── Views: first badge, hidden, available ── */
-html:not(.yti-no-views) .yti-has-views-ui:hover .yti-views-ui,
-html:not(.yti-no-views) .yti-has-block-ui:hover .yti-views-ui {
+html:not(.yti-no-views) .yti-actions-open .yti-views-ui,
+:host-context(.yti-actions-open) .yti-views-ui {
   opacity: 1 !important;
 }
 
@@ -580,13 +588,14 @@ a.ytLockupViewModelContentImage.yti-has-view-badges,
   pointer-events: auto !important;
 }
 
-html:not(.yti-no-block) .yti-blocked-host:hover .yti-block-ui,
-html:not(.yti-no-block) .yti-has-block-ui:hover .yti-block-ui {
+html:not(.yti-no-block) .yti-actions-open .yti-blocked-host .yti-block-ui,
+html:not(.yti-no-block) .yti-actions-open.yti-blocked-host > .yti-block-ui {
   opacity: 1 !important;
 }
 
-html:not(.yti-no-views) .yti-hidden:hover .yti-block-ui,
-html:not(.yti-no-views) .yti-hidden:hover .yti-views-ui {
+html:not(.yti-no-views) .yti-actions-open.yti-hidden .yti-block-ui,
+html:not(.yti-no-views) .yti-actions-open.yti-hidden .yti-views-ui,
+html:not(.yti-no-views) .yti-actions-open .yti-hidden .yti-views-ui {
   opacity: 1 !important;
 }
 

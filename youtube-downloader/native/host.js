@@ -202,6 +202,14 @@ function lastError(stderr, fallback) {
   return (error || fallback).replace(/^ERROR:\s*/, "");
 }
 
+function downloadError(stderr) {
+  const raw = lastError(stderr, "Не удалось скачать");
+  if (/conversion failed|ffmpeg exited|postprocessing/i.test(`${stderr || ""}\n${raw}`)) {
+    return "Не удалось собрать файл: склейка видео и звука оборвалась.";
+  }
+  return raw;
+}
+
 function formatBytes(bytes, approx) {
   if (!bytes || bytes <= 0) return "";
   const mb = bytes / (1024 * 1024);
@@ -231,7 +239,11 @@ function codecName(codec) {
 function videoScore(format) {
   const codec = format.vcodec || "";
   const rank = codec.startsWith("avc1") ? 3 : codec.startsWith("vp9") || codec.startsWith("vp09") ? 2 : 1;
-  return rank * 1_000_000_000 + (format.tbr || format.vbr || 0);
+  // У YouTube у HLS-копии того же кадра битрейт выше, но у пакетов нет меток времени:
+  // ffmpeg обрывает сборку с «Conversion failed». Прямой https-файл склеивается.
+  const protocol = String(format.protocol || "");
+  const direct = protocol === "https" || protocol === "http" || protocol.startsWith("http_") ? 1 : 0;
+  return direct * 10_000_000_000 + rank * 1_000_000_000 + (format.tbr || format.vbr || 0);
 }
 
 function rowsFromInfo(info) {
@@ -600,7 +612,8 @@ async function download(url, format, onProgress, trayId) {
     return { ok: false, error: "Загрузка отменена" };
   }
   if (result.code !== 0) {
-    return { ok: false, error: lastError(result.stderr, "Не удалось скачать") };
+    await removeTemps(downloads, partials, format, started);
+    return { ok: false, error: downloadError(result.stderr) };
   }
   return { ok: true, phase: "done", filename: savedName(downloads, finalPath, started) || "Файл в папке Загрузки" };
 }
